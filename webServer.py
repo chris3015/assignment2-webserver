@@ -1,53 +1,90 @@
-# Import socket module
+# import socket module
 from socket import *
-# In order to terminte the program
+# In order to terminate the program
 import sys
-def webServer(serverPort=13331):
-    serverSocket = socket(AF_INET, SOCK_STREAM)
 
-    #Prepare a sever socket
-    #Fill in start
-    serverSocket.bind(("", serverPort))
-    serverSocket.listen(1)
-    print ('the web server is up on port and running:', serverPort)
-    #Fill in end
 
-    while True:
+def webServer(port=13331):
+  serverSocket = socket(AF_INET, SOCK_STREAM)
+  
+  #Prepare a server socket
+  serverSocket.bind(("", port))
+  
+  #Fill in start
+  serverSocket.listen(1)  # listen for incoming connections
+  #Fill in end
 
-        print ('Ready to serve...')
+  while True:
+    #Establish the connection
+    
+    print('Ready to serve...')
+    connectionSocket, addr = serverSocket.accept()     #Fill in start -are you accepting connections?     #Fill in end
+    
+    try:
+      message = connectionSocket.recv(4096)   #Fill in start -a client is sending you a message   #Fill in end 
+      filename = message.split()[1]
+      
+      #opens the client requested file. 
+      #Plenty of guidance online on how to open and read a file in python. How should you read it though if you plan on sending it through a socket?
+      f = open(filename[1:], 'rb'    #fill in start              #fill in end   )
+      
+      # Build the response body from the file (as bytes)
+      body = bytearray()
+      for line in f:  # for line in file
+        #Fill in start - append your html file contents
+        body += line
+        #Fill in end
+      f.close()
 
-        connectionSocket, addr = serverSocket.accept() #Fill in start -are you accepting connections?
-        try:
+      #This variable can store the headers you want to send for any valid or invalid request.   What header should be sent for a response that is ok?    
+      #Fill in start 
+      status_line = b"HTTP/1.1 200 OK\r\n"
+      #Content-Type is an example on how to send a header as bytes. There are more!
+      outputdata = (
+        status_line +
+        b"Content-Type: text/html; charset=UTF-8\r\n" +
+        b"Server: MyTinyServer/1.0\r\n" +
+        b"Connection: close\r\n" +
+        f"Content-Length: {len(body)}\r\n".encode('ascii') +
+        b"\r\n"  # blank line ends headers
+      )
+      #Note that a complete header must end with a blank line, creating the four-byte sequence "\r\n\r\n" Refer to https://w3.cs.jmu.edu/kirkpams/OpenCSF/Books/csf/html/TCPSockets.html
+      #Fill in end
+               
+      #Send the content of the requested file to the client (don't forget the headers you created)!
+      #Send everything as one send command, do not send one line/item at a time!
 
-            message = connectionSocket.recv(1024)
+      # Fill in start
+      connectionSocket.sendall(outputdata + body)
+      # Fill in end
+        
+      connectionSocket.close() #closing the connection socket
+      
+    except Exception as e:
+      # Send response message for invalid request due to the file not being found (404)
+      # Remember the format you used in the try: block!
+      #Fill in start
+      body404 = b"<html><body><h1>404 Not Found</h1><p>Resource not found.</p></body></html>"
+      header404 = (
+        b"HTTP/1.1 404 Not Found\r\n"
+        b"Content-Type: text/html; charset=UTF-8\r\n"
+        b"Server: MyTinyServer/1.0\r\n"
+        b"Connection: close\r\n"
+        + f"Content-Length: {len(body404)}\r\n".encode('ascii')
+        + b"\r\n"
+      )
+      connectionSocket.sendall(header404 + body404)
+      #Fill in end
 
-            filename = message.split()[1]
+      #Close client socket
+      #Fill in start
+      connectionSocket.close()
+      #Fill in end
 
-            f = open(filename[1:])
+  # Commenting out the below (some use it for local testing). It is not required for Gradescope, and some students have moved it erroneously in the While loop. 
+  # DO NOT PLACE ANYWHERE ELSE AND DO NOT UNCOMMENT WHEN SUBMITTING, YOU ARE GONNA HAVE A BAD TIME
+  #serverSocket.close()
+  #sys.exit()  # Terminate the program after sending the corresponding data
 
-            outputdata = f.read()
-            print (outputdata)
-            #Send an HTTP header line into socket for a valid request. What header should be sent for a response that is ok?
-            #Fill in start
-            connectionSocket.send('\nHTTP/1.1 200 OK\n\n'.encode())
-            #Fill in end
-
-            # Send the content of the requested file to the client
-            for i in range(0, len(outputdata)):
-                connectionSocket.send(outputdata[i].encode())
-            connectionSocket.send("\r\n\r\n".encode())
-            connectionSocket.close() #closing the connection socket
-
-        except IOError:
-            # Send response message for invalid request due to the file not being found (404)
-            #Fill in start
-            connectionSocket.send("\nHTTP/1.1 404 Not Found\n\n".encode())
-            #Fill in end
-            # Close the client connection socket
-            #Fill in start
-            connectionSocket.close()
-            #Fill in end
-    serverSocket.close()
-    sys.exit() # Terminate the program after sending the corresponding data
 if __name__ == "__main__":
-      webServer(13331)
+  webServer(13331)
