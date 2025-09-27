@@ -4,6 +4,7 @@ from socket import *
 import sys
 
 
+
 def webServer(port=13331):
   serverSocket = socket(AF_INET, SOCK_STREAM)
   
@@ -11,7 +12,7 @@ def webServer(port=13331):
   serverSocket.bind(("", port))
   
   #Fill in start
-  serverSocket.listen(1)  # listen for incoming connections
+  serverSocket.listen(1)  # start listening for connections
   #Fill in end
 
   while True:
@@ -26,14 +27,11 @@ def webServer(port=13331):
       
       #opens the client requested file. 
       #Plenty of guidance online on how to open and read a file in python. How should you read it though if you plan on sending it through a socket?
-      f = open(filename[1:], 'rb'    #fill in start              #fill in end   )
+      f = open(filename[1:], 'rb'     #fill in start              #fill in end   )
       
-      # Build the response body from the file (as bytes)
-      body = bytearray()
-      for line in f:  # for line in file
-        #Fill in start - append your html file contents
-        body += line
-        #Fill in end
+      
+      # Read the whole file into memory as bytes (so we can compute Content-Length)
+      body = f.read()
       f.close()
 
       #This variable can store the headers you want to send for any valid or invalid request.   What header should be sent for a response that is ok?    
@@ -49,13 +47,19 @@ def webServer(port=13331):
         b"\r\n"  # blank line ends headers
       )
       #Note that a complete header must end with a blank line, creating the four-byte sequence "\r\n\r\n" Refer to https://w3.cs.jmu.edu/kirkpams/OpenCSF/Books/csf/html/TCPSockets.html
+ 
       #Fill in end
                
+      for i in [body]: #for line in file
+        #Fill in start - append your html file contents
+        outputdata += i
+        #Fill in end 
+        
       #Send the content of the requested file to the client (don't forget the headers you created)!
       #Send everything as one send command, do not send one line/item at a time!
 
       # Fill in start
-      connectionSocket.sendall(outputdata + body)
+      connectionSocket.sendall(outputdata)
       # Fill in end
         
       connectionSocket.close() #closing the connection socket
@@ -75,6 +79,7 @@ def webServer(port=13331):
       )
       connectionSocket.sendall(header404 + body404)
       #Fill in end
+
 
       #Close client socket
       #Fill in start
